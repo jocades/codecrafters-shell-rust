@@ -7,7 +7,7 @@ use std::{
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
-const BUILTINS: [&str; 4] = ["exit", "echo", "type", "pwd"];
+const BUILTINS: [&str; 5] = ["exit", "echo", "type", "pwd", "cd"];
 
 fn find_exe(cmd: &str) -> Result<Option<PathBuf>> {
     Ok(env::var("PATH")?.split(':').find_map(|p| {
@@ -43,6 +43,10 @@ fn main() -> Result<()> {
                 }
             }
             "pwd" => println!("{}", env::current_dir()?.display()),
+            "cd" => {
+                env::set_current_dir(args[1])
+                    .unwrap_or_else(|_| println!("cd: {}: No such file or directory", args[1]));
+            }
             cmd => {
                 if let Some(path) = find_exe(cmd)? {
                     Command::new(path).args(&args[1..]).status()?;
