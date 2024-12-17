@@ -42,6 +42,7 @@ fn main() -> Result<()> {
                     println!("{cmd}: not found");
                 }
             }
+            "pwd" => println!("{}", env::current_dir()?.display()),
             cmd => {
                 if let Some(path) = find_exe(cmd)? {
                     Command::new(path).args(&args[1..]).status()?;
