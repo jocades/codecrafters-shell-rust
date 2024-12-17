@@ -16,6 +16,10 @@ fn find_exe(cmd: &str) -> Result<Option<PathBuf>> {
     }))
 }
 
+fn home_dir() -> Result<PathBuf> {
+    Ok(PathBuf::from(env::var("HOME")?))
+}
+
 fn main() -> Result<()> {
     let mut stdin = io::stdin().lock();
 
@@ -44,8 +48,12 @@ fn main() -> Result<()> {
             }
             "pwd" => println!("{}", env::current_dir()?.display()),
             "cd" => {
-                env::set_current_dir(args[1])
-                    .unwrap_or_else(|_| println!("cd: {}: No such file or directory", args[1]));
+                env::set_current_dir(if let Some(stripped) = args[1].strip_prefix("~") {
+                    home_dir()?.join(stripped)
+                } else {
+                    Path::new(args[1]).into()
+                })
+                .unwrap_or_else(|_| println!("cd: {}: No such file or directory", args[1]));
             }
             cmd => {
                 if let Some(path) = find_exe(cmd)? {
