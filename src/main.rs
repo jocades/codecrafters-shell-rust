@@ -1,13 +1,18 @@
-#[allow(unused_imports)]
-use std::io::{self, Write};
+use std::io::{self, BufRead, Write};
 
-fn main() {
-    // Uncomment this block to pass the first stage
+use anyhow::Result;
+
+fn main() -> Result<()> {
     print!("$ ");
-    io::stdout().flush().unwrap();
+    io::stdout().flush()?;
 
-    // Wait for user input
-    let stdin = io::stdin();
-    let mut input = String::new();
-    stdin.read_line(&mut input).unwrap();
+    let mut stdin = io::stdin().lock();
+    let mut buf = String::new();
+    stdin.read_line(&mut buf)?;
+
+    match buf.trim() {
+        cmd => println!("{cmd}: command not found"),
+    };
+
+    Ok(())
 }
