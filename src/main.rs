@@ -51,7 +51,7 @@ fn main() -> Result<()> {
                 env::set_current_dir(if let Some(stripped) = args[1].strip_prefix("~") {
                     home_dir()?.join(stripped)
                 } else {
-                    Path::new(args[1]).into()
+                    args[1].into()
                 })
                 .unwrap_or_else(|_| println!("cd: {}: No such file or directory", args[1]));
             }
