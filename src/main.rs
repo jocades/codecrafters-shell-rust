@@ -7,7 +7,7 @@ use std::{
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
-const BUILTINS: [&str; 3] = ["exit", "echo", "type"];
+const BUILTINS: [&str; 4] = ["exit", "echo", "type", "pwd"];
 
 fn find_exe(cmd: &str) -> Result<Option<PathBuf>> {
     Ok(env::var("PATH")?.split(':').find_map(|p| {
