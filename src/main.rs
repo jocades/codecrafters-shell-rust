@@ -10,16 +10,11 @@ fn main() -> Result<()> {
         let mut buf = String::new();
         stdin.read_line(&mut buf)?;
 
-        match buf.trim() {
-            cmd if cmd.starts_with("exit") => {
-                let (_, code) = cmd.split_once(" ").context("must include code")?;
-                std::process::exit(code.parse()?)
-            }
-            cmd => {
-                println!("{cmd}: command not found");
-            }
-        };
+        let cmd: Vec<&str> = buf.trim().split_whitespace().collect();
+        match cmd[0] {
+            "exit" => std::process::exit(cmd[1].parse()?),
+            "echo" => println!("{}", &cmd[1..].join(" ")),
+            other => println!("{other}: command not found"),
+        }
     }
-
-    Ok(())
 }
