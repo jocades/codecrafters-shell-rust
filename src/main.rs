@@ -12,7 +12,7 @@ const BUILTINS: [&str; 3] = ["exit", "echo", "type"];
 fn find_exe(cmd: &str) -> Result<Option<PathBuf>> {
     Ok(env::var("PATH")?.split(':').find_map(|p| {
         let path = Path::new(p).join(cmd);
-        path.exists().then_some(path)
+        path.is_file().then_some(path)
     }))
 }
 
@@ -44,8 +44,7 @@ fn main() -> Result<()> {
             }
             cmd => {
                 if let Some(path) = find_exe(cmd)? {
-                    let out = Command::new(path).args(&args[1..]).output()?.stdout;
-                    println!("{}", String::from_utf8_lossy(&out).trim());
+                    Command::new(path).args(&args[1..]).status()?;
                 } else {
                     println!("{cmd}: command not found");
                 }
