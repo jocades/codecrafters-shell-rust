@@ -1,50 +1,55 @@
 use std::{
-    env, fs,
+    env,
     io::{self, BufRead, Write},
+    path::{Path, PathBuf},
+    process::{self, Command},
 };
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 const BUILTINS: [&str; 3] = ["exit", "echo", "type"];
 
+fn find_exe(cmd: &str) -> Result<Option<PathBuf>> {
+    Ok(env::var("PATH")?.split(':').find_map(|p| {
+        let path = Path::new(p).join(cmd);
+        path.exists().then_some(path)
+    }))
+}
+
 fn main() -> Result<()> {
     let mut stdin = io::stdin().lock();
-    let mut buf = String::new();
 
     loop {
         print!("$ ");
         io::stdout().flush()?;
+
+        let mut buf = String::new();
         stdin.read_line(&mut buf)?;
 
-        let cmd: Vec<&str> = buf.split_whitespace().collect();
-        match cmd[0] {
-            "exit" => std::process::exit(cmd[1].parse()?),
-            "echo" => println!("{}", &cmd[1..].join(" ")),
+        let args: Vec<&str> = buf.split_whitespace().collect();
+        match args[0] {
+            "exit" => process::exit(args[1].parse()?),
+            "echo" => println!("{}", &args[1..].join(" ")),
             "type" => {
-                if BUILTINS.iter().any(|&b| b == cmd[1]) {
-                    println!("{} is a shell builtin", cmd[1]);
+                let cmd = args[1];
+                if BUILTINS.contains(&cmd) {
+                    println!("{cmd} is a shell builtin");
+                    continue;
+                }
+                if let Some(path) = find_exe(cmd)? {
+                    println!("{cmd} is {}", path.display());
                 } else {
-                    let mut ok = false;
-                    for path in env::var("PATH")?.split(':') {
-                        for entry in fs::read_dir(path)?.filter_map(|e| e.ok()) {
-                            if entry.file_name() == cmd[1] {
-                                println!("{} is {}", cmd[1], entry.path().display());
-                                ok = true;
-                                break;
-                            }
-                        }
-                        if ok {
-                            break;
-                        }
-                    }
-                    if !ok {
-                        println!("{}: not found", cmd[1]);
-                    }
+                    println!("{cmd}: not found");
                 }
             }
-            other => println!("{other}: command not found"),
+            cmd => {
+                if let Some(path) = find_exe(cmd)? {
+                    let out = Command::new(path).args(&args[1..]).output()?.stdout;
+                    println!("{}", String::from_utf8_lossy(&out).trim());
+                } else {
+                    println!("{cmd}: command not found");
+                }
+            }
         };
-
-        buf.clear();
     }
 }
